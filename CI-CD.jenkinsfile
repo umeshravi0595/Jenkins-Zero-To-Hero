@@ -1,0 +1,62 @@
+pipeline {
+    agent any
+    tools {
+        maven 'apache-maven-3.0.1'
+        dockerTool  'docker'
+    }
+    environment {
+    DOCKERHUB_CREDENTIALS = credentials('dockerhub')
+    ANSIBLE_CONFIG = '/opt/kickstart-ansible/ansible.cfg'
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                sh 'echo passed'
+            git branch: 'main', url: 'https://github.com/umeshravi0595/Jenkins-Zero-To-Hero.git'
+      }
+    }
+       stage('Maven') {
+         steps {
+             sh 'ls -ltr java-maven-sonar-argocd-helm-k8s/spring-boot-app'
+             sh 'mvn --version'
+             sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'
+      }
+    }
+    
+        stage('docker'){
+            steps{
+                sh 'docker --version'
+                sh 'docker ps '
+            }
+        }
+         
+          stage('Build docker image') {
+            steps {  
+                sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && docker build -t umeshron05/maven-docker-java-image:$BUILD_NUMBER .'
+            }
+        }
+        stage('login to dockerhub') {
+            steps{
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+        stage('push image') {
+            steps{
+                sh 'docker push umeshron05/maven-docker-java-image:$BUILD_NUMBER'
+            }
+        }
+        stage('deploy'){
+            steps{
+                 ansiblePlaybook (
+          credentialsId: 'ansible-node-ssh',
+          disableHostKeyChecking: true,
+          inventory: '/opt/kickstart-ansible/inventory/dev',
+          playbook: '/opt/kickstart-ansible/playbook/app.yml',
+          // extras: '-e {"app":{"environment":"stg"}}',
+          tags: 'setup, update, configure, start',
+          limit: 'crm-dev-app-1'
+        ) 
+            }
+        }
+    }
+}
