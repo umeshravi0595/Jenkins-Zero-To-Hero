@@ -4,10 +4,7 @@ pipeline {
       image 'node:16-alpine' 
   }
 }
-  tools {
-        maven 'apache-maven-3.0.1'
-        dockerTool  'docker'
-    }
+
   stages {
     stage('SCM Checkout') {
             steps{
