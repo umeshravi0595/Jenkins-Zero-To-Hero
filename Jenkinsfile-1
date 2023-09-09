@@ -39,7 +39,7 @@ pipeline {
         }
         stage('deploy') {
             steps{
-            sh "docker container run -d -it -p 2000:8000 --name todo abhishekf5/cicd-e2e:v2 "
+            sh "docker container run -d -it --rm -p 2000:8000 --name todo abhishekf5/cicd-e2e:v2 "
      }
    }
  }
