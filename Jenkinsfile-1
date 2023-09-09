@@ -1,0 +1,46 @@
+pipeline {
+    agent any
+    tools {
+        dockerTool  'docker'
+    }
+    environment {
+    DOCKERHUB_CREDENTIALS = credentials('dockerhub')
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                sh 'echo passed'
+            git branch: 'main', url: 'https://github.com/umeshravi0595/Jenkins-Zero-To-Hero.git'
+      }
+    }
+    
+        stage('docker'){
+            steps{
+                sh 'docker --version'
+                sh 'docker ps '
+            }
+        }
+         
+          stage('Build docker image') {
+            steps {  
+                
+                sh "docker image tag abhishekf5/cicd-e2e:v2  umeshron05/todo:${BUILD_NUMBER}"
+            }
+        }
+        stage('login to dockerhub') {
+            steps{
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+        stage('push image') {
+            steps{
+                sh 'docker image push umeshron05/todo:$BUILD_NUMBER'
+            }
+        }
+        stage('deploy') {
+            steps{
+            sh "docker container run -d -it -p 2000:8000 --name todo abhishekf5/cicd-e2e:v2 "
+     }
+   }
+ }
+}
